@@ -132,6 +132,8 @@ private:
    * @brief Publishes the final GPS coordinates.
    */
   void publish_final_gps();
+
+  void start_without_mocap();
   
   // ROS publishers and subscribers
   rclcpp::Subscription<sensor_msgs::msg::Imu>::SharedPtr stim_imu_sub_;
@@ -222,7 +224,7 @@ private:
   bool map_initialized_;
   double first_utm_x, first_utm_y, first_utm_z;
   int number_of_gps_measurements_;
-  int number_of_gps_measurements_for_map_init_ = 5;
+  int number_of_gps_measurements_for_map_init_ = 1;
   double sum_lat_, sum_lon_, sum_alt_;
   double cov_threshold_ =  10.0;
   Vector3 position_variances;

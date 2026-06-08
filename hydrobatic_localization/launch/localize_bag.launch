@@ -6,7 +6,7 @@
     <arg name="inference_strategy" default="FullSmoothing"/>
     <arg name = "kf_interval_hz" default = "10"/>
     <arg name = "init_from_ground_truth" default = "false"/>    
-    <arg name = "bag_file" default = "/home/axel/colcon_ws/rosbag2_2025_07_03-14_52_42"/>
+    <arg name = "bag_file" default = "/home/orin/workspaces/sam_bags/july_3/rosbag2_2025_07_03-14_52_42"/>
     <arg name="robot_urdf" default="sam_auv.urdf"/>
     <arg name="use_sensor_covariance" default="false"/>
 
@@ -32,7 +32,7 @@
         <param name="frame_prefix" value="sam_mocap/"/>
         <param name="use_tf_static"   value="true"/>
     </node>
-    <node
+    <!-- <node
         pkg="hydrobatic_localization"
         exec="logger"
         output="screen"
@@ -41,5 +41,5 @@
         <param name="use_sim_time" value="$(var use_sim_time)"/>
         <param name="robot_name"   value="$(var robot_name)"/>
         <param name="folder"       value="gps_comp"/>
-    </node>
+    </node> -->
 </launch>

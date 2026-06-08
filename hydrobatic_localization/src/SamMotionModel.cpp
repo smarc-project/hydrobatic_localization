@@ -6,8 +6,8 @@ SamMotionModelWrapper::SamMotionModelWrapper(double dt): dt_(dt)
 
     {
         pybind11::gil_scoped_acquire acquire;
-        py::module motion_model = py::module::import("smarc_modelling.vehicles.SAM_PIML");
-        sam_object_ = motion_model.attr("SAM_PIML")();
+        py::module motion_model = py::module::import("smarc_modelling.vehicles.SAM");
+        sam_object_ = motion_model.attr("SAM")();
         dynamics_func_ = sam_object_.attr("dynamics");
         dt_func_ = sam_object_.attr("update_dt");
     }
