@@ -61,7 +61,7 @@ class StateEstimator : public rclcpp::Node {
 public:
   StateEstimator();
   // ~StateEstimator();
-std::shared_ptr<PreintegratedMotionModel> getMotionModel() const { return pmm;}
+// std::shared_ptr<PreintegratedMotionModel> getMotionModel() const { return pmm;}
   
 private:
   /**
@@ -98,7 +98,7 @@ private:
    * @brief Callback for adding thruster vector command to the control sequence queue.
    * @param msg: thruster vector command message
    */
-  void ThrusterVectorCallback(const sam_msgs::msg::ThrusterAngles::SharedPtr msg);
+  // void ThrusterVectorCallback(const sam_msgs::msg::ThrusterAngles::SharedPtr msg);
 
   void KeyframeTimerCallback();
 
@@ -106,15 +106,15 @@ private:
    * @brief Callback for adding thruster RPM command to the control sequence queue.
    * @param msg: thruster RPM command message
    */
-  void thruster_callback(const sam_msgs::msg::ThrusterRPMs::SharedPtr msg);
+  // void thruster_callback(const sam_msgs::msg::ThrusterRPMs::SharedPtr msg);
 
   /**
    * @brief Callback for adding LCG/VBS command to the control sequence queue.
    * @param msg: LCG/VBS command message
    */
-  void lcg_vbs_callback(
-    const smarc_msgs::msg::PercentStamped::ConstSharedPtr lcg,
-    const smarc_msgs::msg::PercentStamped::ConstSharedPtr vbs);
+  // void lcg_vbs_callback(
+    // const smarc_msgs::msg::PercentStamped::ConstSharedPtr lcg,
+    // const smarc_msgs::msg::PercentStamped::ConstSharedPtr vbs);
 
   void gt_odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
   
@@ -249,7 +249,7 @@ private:
 
 
   //Motion model for SAM
-  std::shared_ptr<PreintegratedMotionModel> pmm;
+  // std::shared_ptr<PreintegratedMotionModel> pmm;
 
   double dt_;
   bool using_motion_model_;

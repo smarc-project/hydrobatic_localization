@@ -17,7 +17,7 @@ StateEstimator::StateEstimator()
   this->get_parameter("inference_strategy", inference_strategy_);
 
   this->declare_parameter<bool>("init_from_ground_truth", true);
-  this->get_parameter("init_from_ground_truth", init_from_ground_truth_);
+  this->get_parameter("3", init_from_ground_truth_);
 
   this->declare_parameter<std::string>("config_file", "sam.yaml");
   this->get_parameter("config_file", config_file_);
@@ -111,25 +111,25 @@ StateEstimator::StateEstimator()
   }
 
 
-  if(using_motion_model_)
-  {
-    thruster_vector_sub_ = this->create_subscription<sam_msgs::msg::ThrusterAngles>(
-      sam_msgs::msg::Topics::THRUST_VECTOR_CMD_TOPIC, 10,
-      std::bind(&StateEstimator::ThrusterVectorCallback, this, std::placeholders::_1));
+  // if(using_motion_model_)
+  // {
+  //   thruster_vector_sub_ = this->create_subscription<sam_msgs::msg::ThrusterAngles>(
+  //     sam_msgs::msg::Topics::THRUST_VECTOR_CMD_TOPIC, 10,
+  //     std::bind(&StateEstimator::ThrusterVectorCallback, this, std::placeholders::_1));
 
-    thruster_rpms_sub_ = this->create_subscription<sam_msgs::msg::ThrusterRPMs>(
-      "core/thruster_rpms_cmd", 10,
-      std::bind(&StateEstimator::thruster_callback, this, std::placeholders::_1));
+  //   thruster_rpms_sub_ = this->create_subscription<sam_msgs::msg::ThrusterRPMs>(
+  //     "core/thruster_rpms_cmd", 10,
+  //     std::bind(&StateEstimator::thruster_callback, this, std::placeholders::_1));
 
-    lcg_sub_.subscribe(this, sam_msgs::msg::Topics::LCG_FB_TOPIC);
-    vbs_sub_.subscribe(this, sam_msgs::msg::Topics::VBS_FB_TOPIC);
+  //   lcg_sub_.subscribe(this, sam_msgs::msg::Topics::LCG_FB_TOPIC);
+  //   vbs_sub_.subscribe(this, sam_msgs::msg::Topics::VBS_FB_TOPIC);
 
-    lcg_vbs_sync_ = std::make_shared<LcgVbsSync>(
-      LcgVbsSyncPolicy(10), lcg_sub_, vbs_sub_);
+  //   lcg_vbs_sync_ = std::make_shared<LcgVbsSync>(
+  //     LcgVbsSyncPolicy(10), lcg_sub_, vbs_sub_);
 
-    lcg_vbs_sync_->registerCallback(
-      std::bind(&StateEstimator::lcg_vbs_callback, this, std::placeholders::_1, std::placeholders::_2) );
-  }
+  //   lcg_vbs_sync_->registerCallback(
+  //     std::bind(&StateEstimator::lcg_vbs_callback, this, std::placeholders::_1, std::placeholders::_2) );
+  // }
 
   tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);  
 
@@ -151,7 +151,7 @@ StateEstimator::StateEstimator()
   gtsam_graph_ = std::make_unique<GtsamGraph>(inference_strategy, config_file);
 
   // Initialize the PreintegratedMotionModel
-  pmm = std::make_shared<PreintegratedMotionModel>(dt_);
+  // pmm = std::make_shared<PreintegratedMotionModel>(dt_);
 
   // utm timer for publishing UTM zone band
   utm_timer_ = this->create_wall_timer(
@@ -416,62 +416,62 @@ void StateEstimator::gt_odom_callback(const nav_msgs::msg::Odometry::SharedPtr m
 }
 
 
-void StateEstimator::ThrusterVectorCallback(const sam_msgs::msg::ThrusterAngles::SharedPtr msg)
-{
-  if(is_graph_initialized_)
-  {
-    Eigen::VectorXd u(2);
-    u << msg->thruster_vertical_radians,
-        msg->thruster_horizontal_radians;
+// void StateEstimator::ThrusterVectorCallback(const sam_msgs::msg::ThrusterAngles::SharedPtr msg)
+// {
+//   if(is_graph_initialized_)
+//   {
+//     Eigen::VectorXd u(2);
+//     u << msg->thruster_vertical_radians,
+//         msg->thruster_horizontal_radians;
         
-    double timestamp = rclcpp::Time(msg->header.stamp).seconds();
-    {
-      std::lock_guard<std::mutex> lk(control_list_mutex_);
-      pmm->controlToList(u, timestamp, true);
-    }
-  }
-}
+//     double timestamp = rclcpp::Time(msg->header.stamp).seconds();
+//     {
+//       std::lock_guard<std::mutex> lk(control_list_mutex_);
+//       pmm->controlToList(u, timestamp, true);
+//     }
+//   }
+// }
 
 // thrusters-only
-void StateEstimator::thruster_callback(const sam_msgs::msg::ThrusterRPMs::SharedPtr msg)
-{
-  if(is_graph_initialized_)
-  {
-    last_thr1_rpm_ = msg->thruster_1_rpm;
-    last_thr2_rpm_ = msg->thruster_2_rpm;
+// void StateEstimator::thruster_callback(const sam_msgs::msg::ThrusterRPMs::SharedPtr msg)
+// {
+//   if(is_graph_initialized_)
+//   {
+//     last_thr1_rpm_ = msg->thruster_1_rpm;
+//     last_thr2_rpm_ = msg->thruster_2_rpm;
 
-    Eigen::Vector4d u_fb;
-    u_fb << last_lcg_,      
-            last_vbs_,
-            last_thr1_rpm_,
-            last_thr2_rpm_;
-    double timestamp = rclcpp::Time(msg->header.stamp).seconds();
-    {
-      std::lock_guard<std::mutex> lk(control_list_mutex_);
-      pmm->controlToList(u_fb, timestamp, false);
-    }
-  }
-}
+//     Eigen::Vector4d u_fb;
+//     u_fb << last_lcg_,      
+//             last_vbs_,
+//             last_thr1_rpm_,
+//             last_thr2_rpm_;
+//     double timestamp = rclcpp::Time(msg->header.stamp).seconds();
+//     {
+//       std::lock_guard<std::mutex> lk(control_list_mutex_);
+//       pmm->controlToList(u_fb, timestamp, false);
+//     }
+//   }
+// }
 
 // LCG/VBS-only
-void StateEstimator::lcg_vbs_callback(
-  const smarc_msgs::msg::PercentStamped::ConstSharedPtr lcg,
-  const smarc_msgs::msg::PercentStamped::ConstSharedPtr vbs)
-{
-  if(is_graph_initialized_)
-  {
-    last_lcg_ = lcg->value;
-    last_vbs_ = vbs->value;
+// void StateEstimator::lcg_vbs_callback(
+//   const smarc_msgs::msg::PercentStamped::ConstSharedPtr lcg,
+//   const smarc_msgs::msg::PercentStamped::ConstSharedPtr vbs)
+// {
+//   if(is_graph_initialized_)
+//   {
+//     last_lcg_ = lcg->value;
+//     last_vbs_ = vbs->value;
 
-    Eigen::Vector4d u_fb;
-    u_fb << last_lcg_,last_vbs_, last_thr1_rpm_, last_thr2_rpm_;
-   double timestamp = rclcpp::Time(lcg->header.stamp).seconds();
-   {
-     std::lock_guard<std::mutex> lk(control_list_mutex_);
-     pmm->controlToList(u_fb, timestamp, false);
-   }
-  } 
-}
+//     Eigen::Vector4d u_fb;
+//     u_fb << last_lcg_,last_vbs_, last_thr1_rpm_, last_thr2_rpm_;
+//    double timestamp = rclcpp::Time(lcg->header.stamp).seconds();
+//    {
+//      std::lock_guard<std::mutex> lk(control_list_mutex_);
+//      pmm->controlToList(u_fb, timestamp, false);
+//    }
+//   } 
+// }
 
 
 // callback for the IMU preintegator
@@ -803,7 +803,7 @@ void StateEstimator::KeyframeTimerCallback()
 
   if(!map_initialized_){
       RCLCPP_INFO(get_logger(), "  skipping: map_initialized_ == false");
-      start_without_mocap(); // Nacho: to start at the surface without the mocap
+      // start_without_mocap(); // Nacho: to start at the surface without the mocap
     return;
   }
 
@@ -937,21 +937,21 @@ void StateEstimator::KeyframeTimerCallback()
       imu_dt, sbg_dt);
     return;
   }
-  if(using_motion_model_)
-  {
-    double current_time = this->get_clock()->now().seconds();
-    NavState state = NavState(previous_state_.pose(), previous_state_.velocity());
-    NavState new_state;
-    {
-      std::lock_guard<std::mutex> lk(control_list_mutex_);
+  // if(using_motion_model_)
+  // {
+  //   double current_time = this->get_clock()->now().seconds();
+  //   NavState state = NavState(previous_state_.pose(), previous_state_.velocity());
+  //   NavState new_state;
+  //   {
+  //     std::lock_guard<std::mutex> lk(control_list_mutex_);
       
-      new_state = pmm->predict(state, gyro, last_time_,
-              current_time,gtsam_graph_->getCurrentCovariance(gtsam_graph_->getCurrentIndex()));
-      gtsam_graph_->addMotionModelFactor(last_time_,current_time,pmm,gyro,new_state);
-    }
-    last_time_ = current_time;
+  //     new_state = pmm->predict(state, gyro, last_time_,
+  //             current_time,gtsam_graph_->getCurrentCovariance(gtsam_graph_->getCurrentIndex()));
+  //     gtsam_graph_->addMotionModelFactor(last_time_,current_time,pmm,gyro,new_state);
+  //   }
+  //   last_time_ = current_time;
 
-  }
+  // }
   
   // Predict the next state using the preintegrated measurements AND add the imu factor to the graph.
   NavState predictes_imu_state = gtsam_graph_->addImuFactor();
@@ -993,10 +993,10 @@ void StateEstimator::KeyframeTimerCallback()
 
   gtsam_graph_->optimize();
 
-  if(using_motion_model_){
-    std::lock_guard<std::mutex> lk(control_list_mutex_);
-    pmm->resetIntegration();
-  }
+  // if(using_motion_model_){
+  //   std::lock_guard<std::mutex> lk(control_list_mutex_);
+  //   pmm->resetIntegration();
+  // }
   current_imu_bias_ = gtsam_graph_->getCurrentImuBias();
 
   previous_state_ = gtsam_graph_->getCurrentState();
