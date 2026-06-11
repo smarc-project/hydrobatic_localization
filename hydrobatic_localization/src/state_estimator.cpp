@@ -17,7 +17,7 @@ StateEstimator::StateEstimator()
   this->get_parameter("inference_strategy", inference_strategy_);
 
   this->declare_parameter<bool>("init_from_ground_truth", true);
-  this->get_parameter("3", init_from_ground_truth_);
+  this->get_parameter("init_from_ground_truth", init_from_ground_truth_);
 
   this->declare_parameter<std::string>("config_file", "sam.yaml");
   this->get_parameter("config_file", config_file_);
@@ -29,7 +29,10 @@ StateEstimator::StateEstimator()
   this->declare_parameter<bool>("use_sensor_covariance", false);
   this->get_parameter("use_sensor_covariance", use_sensor_covariance_);
 
-
+  this->number_of_gps_measurements_ = 0;
+  this->sum_lat_ = 0.0;
+  this->sum_lon_ = 0.0;
+  this->sum_alt_ = 0.0;
 
   std::string config_file;
   if (std::filesystem::path(config_file_).is_absolute()) {
@@ -378,7 +381,7 @@ void StateEstimator::gt_odom_callback(const nav_msgs::msg::Odometry::SharedPtr m
       tf2::durationFromSec(0.1)     
     );
   } catch (const tf2::TransformException &ex) {
-    RCLCPP_WARN(get_logger(), "TF lookup (odom←base_link) failed: %s", ex.what());
+    RCLCPP_WARN(this->get_logger(), "TF lookup (odom←base_link) failed: %s", ex.what());
     return;
   }
   tf2::Quaternion q_body_to_odom;
@@ -560,7 +563,13 @@ void StateEstimator::barometer_callback(const sensor_msgs::msg::FluidPressure::S
 
 
 void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
-  if(init_from_ground_truth_) return;
+  RCLCPP_INFO(this->get_logger(), "Received GPS fix: lat=%.6f, lon=%.6f, alt=%.2f, status=%d",
+              msg->latitude, msg->longitude, msg->altitude, msg->status.status);
+  if(init_from_ground_truth_) 
+  {
+    RCLCPP_INFO(this->get_logger(), "Ignoring GPS fix because init_from_ground_truth is true");
+    return;
+  }
   if (msg->status.status < sensor_msgs::msg::NavSatStatus::STATUS_FIX) 
   {
     RCLCPP_WARN(this->get_logger(), "Received GPS message without valid fix (status: %d)", msg->status.status);
@@ -570,6 +579,7 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
   double utm_x, utm_y, utm_z;
   if(!map_initialized_ )
   {
+    RCLCPP_INFO(this->get_logger(), "Initializing map frame with GPS data");
   // if sim time is used, take the ground truth as gps reading
     if(this->get_parameter("use_sim_time").as_bool())
     {
@@ -617,7 +627,7 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
       double var = msg->position_covariance[0];
       if (var > cov_threshold_*cov_threshold_)
       {
-        RCLCPP_WARN(get_logger(),
+        RCLCPP_WARN(this->get_logger(),
         "GPS covariance too high (sigma=%.1f m), dropping fix", std::sqrt(var));
         return;
       }
@@ -625,6 +635,7 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
         sum_lon_ += msg->longitude;
         sum_alt_ += msg->altitude;
         number_of_gps_measurements_++;
+        RCLCPP_INFO(this->get_logger(), "Accumulated GPS measurements: %d", number_of_gps_measurements_);
       
       if (number_of_gps_measurements_ >= number_of_gps_measurements_for_map_init_) 
       {
@@ -802,7 +813,7 @@ void StateEstimator::KeyframeTimerCallback()
   //   }
 
   if(!map_initialized_){
-      RCLCPP_INFO(get_logger(), "  skipping: map_initialized_ == false");
+      RCLCPP_INFO(this->get_logger(), "  skipping: map_initialized_ == false");
       // start_without_mocap(); // Nacho: to start at the surface without the mocap
     return;
   }
@@ -933,7 +944,7 @@ void StateEstimator::KeyframeTimerCallback()
   auto [imu_dt, sbg_dt] = gtsam_graph_->getTij();
   if (imu_dt <= 0.0/* || sbg_dt <= 0.0*/)
   {
-    RCLCPP_INFO(get_logger(),"No new IMU/SBG data this cycle (imu_dt=%.6f, sbg_dt=%.6f), skipping factors + optimize",
+    RCLCPP_INFO(this->get_logger(),"No new IMU/SBG data this cycle (imu_dt=%.6f, sbg_dt=%.6f), skipping factors + optimize",
       imu_dt, sbg_dt);
     return;
   }
