@@ -23,13 +23,17 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(GeographicLib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_library(CPPUNITLITE_LIBRARY NAMES CppUnitLite PATHS /usr/local/lib)
 find_package(piml_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
+
+# GeographicLib
+list(APPEND CMAKE_MODULE_PATH "/usr/share/cmake/geographiclib")
+find_package(GeographicLib REQUIRED)
+
 # GTSAM stuff
 find_package(GTSAMCMakeTools)
 include(FetchContent)
@@ -55,6 +59,7 @@ include_directories(${PROJECT_SOURCE_DIR}/include/)
 include_directories(${PROJECT_SOURCE_DIR}/launch/)
 #include GeographicLib
 include_directories(${GeographicLib_INCLUDE_DIRS})
+message(GeographicLib_INCLUDE_DIRS="${GeographicLib_INCLUDE_DIRS}")
 include_directories(${Python3_INCLUDE_DIRS})
 # set python interpreter path 
 
@@ -79,7 +84,7 @@ ament_target_dependencies(state_estimator
 target_link_libraries(state_estimator
   gtsam
   Eigen3::Eigen
-  GeographicLib::GeographicLib
+  ${GeographicLib_LIBRARIES}
   yaml-cpp   
   tf2_geometry_msgs::tf2_geometry_msgs
   Python3::Python
