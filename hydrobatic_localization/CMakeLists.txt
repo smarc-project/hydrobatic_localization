@@ -45,9 +45,10 @@ include_directories(${GeographicLib_INCLUDE_DIRS})
 include_directories(${Python3_INCLUDE_DIRS})
 # set python interpreter path 
 
-add_executable(state_estimator src/state_estimator.cpp src/gtsam_graph.cpp src/BodyVelocityFactor src/BarometerFactor.cpp src/DvlFactor.cpp src/SamMotionModel src/SamMotionModelFactor.cpp)
+add_executable(state_estimator src/state_estimator.cpp src/gtsam_graph.cpp src/BodyVelocityFactor.cpp src/BarometerFactor.cpp src/DvlFactor.cpp src/SamMotionModel.cpp src/SamMotionModelFactor.cpp)
 ament_target_dependencies(state_estimator
   rclcpp
+  ament_index_cpp
   sensor_msgs
   dead_reckoning_msgs
   std_msgs
@@ -88,6 +89,8 @@ ament_target_dependencies(motion_model
   geometry_msgs
   piml_msgs
 )
+
+target_link_libraries(motion_model Python3::Python)
 
 # add logger node executable
 add_executable(logger src/loggerNode.cpp)
