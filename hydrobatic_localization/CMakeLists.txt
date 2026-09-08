@@ -31,7 +31,7 @@ find_library(CPPUNITLITE_LIBRARY NAMES CppUnitLite PATHS /usr/local/lib)
 find_package(piml_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 # GTSAM stuff
-# find_package(GTSAMCMakeTools)
+find_package(GTSAMCMakeTools)
 find_package(GTSAM REQUIRED)
 include_directories(${GTSAM_INCLUDE_DIR})
 message(GTSAM_INCLUDE_DIR="${GTSAM_INCLUDE_DIR}")
@@ -136,55 +136,55 @@ install(DIRECTORY launch
 
 
 
-# if(BUILD_TESTING)
-#   find_package(ament_lint_auto REQUIRED)
-#   # add_executable(test_motion_model_factor
-#     # test/SamMotionModelFactorTest.cpp
-#     # src/SamMotionModelFactor.cpp
-#     # src/SamMotionModel.cpp
-#   # )
-#   add_executable(test_barometer_factor
-#     test/BarometerFactorTest.cpp
-#     src/BarometerFactor.cpp
-#   )
-#   add_executable(test_dvl_factor
-#     test/DvlFactorTest.cpp
-#     src/DvlFactor.cpp
-#   )
-#   add_executable(test_bodyvelocity_factor
-#     test/BodyVelocityFactorTest.cpp
-#     src/BodyVelocityFactor.cpp
-#   )
-#   # TODO inlcude CppUnitLite headers in a better way
-#   target_include_directories(test_barometer_factor PUBLIC /usr/local/include)
-#   find_library(CPPUNITLITE_LIBRARY NAMES cppunitlite PATHS /usr/local/lib)
-#   if(NOT CPPUNITLITE_LIBRARY)
-#     message(FATAL_ERROR "Could not find the CppUnitLite library in /usr/local/lib")
-#   endif()
-#   target_link_libraries(test_dvl_factor
-#     gtsam
-#     ${CPPUNITLITE_LIBRARY}
-#   )
-#   target_link_libraries(test_barometer_factor
-#     gtsam
-#     ${CPPUNITLITE_LIBRARY}
-#   )
-#   # target_link_libraries(test_motion_model_factor
-#   #   gtsam
-#   #   ${CPPUNITLITE_LIBRARY}
-#   # )
-#   target_link_libraries(test_bodyvelocity_factor
-#     gtsam
-#     ${CPPUNITLITE_LIBRARY}
-#   )
-#   # ament_target_dependencies(test_motion_model_factor
-#   #   rclcpp
-#   # )
-#   ament_add_test(test_dvl_factor COMMAND test_dvl_factor)
-#   ament_add_test(test_barometer_factor COMMAND test_barometer_factor)
-#   # ament_add_test(test_motion_model_factor COMMAND test_motion_model_factor)
-#   ament_add_test(test_bodyvelocity_factor COMMAND test_bodyvelocity_factor)
-#   ament_lint_auto_find_test_dependencies()
-# endif()
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  # add_executable(test_motion_model_factor
+    # test/SamMotionModelFactorTest.cpp
+    # src/SamMotionModelFactor.cpp
+    # src/SamMotionModel.cpp
+  # )
+  add_executable(test_barometer_factor
+    test/BarometerFactorTest.cpp
+    src/BarometerFactor.cpp
+  )
+  add_executable(test_dvl_factor
+    test/DvlFactorTest.cpp
+    src/DvlFactor.cpp
+  )
+  add_executable(test_bodyvelocity_factor
+    test/BodyVelocityFactorTest.cpp
+    src/BodyVelocityFactor.cpp
+  )
+  # TODO inlcude CppUnitLite headers in a better way
+  target_include_directories(test_barometer_factor PUBLIC /usr/local/include)
+  find_library(CPPUNITLITE_LIBRARY NAMES cppunitlite PATHS /usr/local/lib)
+  if(NOT CPPUNITLITE_LIBRARY)
+    message(FATAL_ERROR "Could not find the CppUnitLite library in /usr/local/lib")
+  endif()
+  target_link_libraries(test_dvl_factor
+    gtsam
+    ${CPPUNITLITE_LIBRARY}
+  )
+  target_link_libraries(test_barometer_factor
+    gtsam
+    ${CPPUNITLITE_LIBRARY}
+  )
+  # target_link_libraries(test_motion_model_factor
+  #   gtsam
+  #   ${CPPUNITLITE_LIBRARY}
+  # )
+  target_link_libraries(test_bodyvelocity_factor
+    gtsam
+    ${CPPUNITLITE_LIBRARY}
+  )
+  # ament_target_dependencies(test_motion_model_factor
+  #   rclcpp
+  # )
+  ament_add_test(test_dvl_factor COMMAND test_dvl_factor)
+  ament_add_test(test_barometer_factor COMMAND test_barometer_factor)
+  # ament_add_test(test_motion_model_factor COMMAND test_motion_model_factor)
+  ament_add_test(test_bodyvelocity_factor COMMAND test_bodyvelocity_factor)
+  ament_lint_auto_find_test_dependencies()
+endif()
 
 ament_package()
