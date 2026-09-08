@@ -101,7 +101,7 @@ StateEstimator::StateEstimator()
       std::bind(&StateEstimator::barometer_callback, this, std::placeholders::_1));
 
   gps_sub_ = this->create_subscription<sensor_msgs::msg::NavSatFix>(
-  smarc_msgs::msg::Topics::GPS_TOPIC, 10,
+  sam_msgs::msg::Topics::GPS_FIX_TOPIC, 10,
   std::bind(&StateEstimator::gps_callback, this, std::placeholders::_1));
 
 
