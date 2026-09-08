@@ -32,7 +32,20 @@ find_package(piml_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
 # GTSAM stuff
 find_package(GTSAMCMakeTools)
-find_package(GTSAM REQUIRED)
+include(FetchContent)
+find_package(GTSAM QUIET CONFIG)
+
+# If GTSAM is not found, fetch it from GitHub
+if(NOT GTSAM_FOUND)
+    message(STATUS "GTSAM not found, fetching from GitHub...")
+    FetchContent_Declare(
+    gtsam
+    GIT_REPOSITORY https://github.com/borglab/gtsam.git
+    GIT_TAG release/4.3a.2
+  )
+  FetchContent_MakeAvailable(gtsam)
+endif()
+
 include_directories(${GTSAM_INCLUDE_DIR})
 message(GTSAM_INCLUDE_DIR="${GTSAM_INCLUDE_DIR}")
 # CppTest
