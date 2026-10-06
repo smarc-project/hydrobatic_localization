@@ -2,6 +2,7 @@
 #define HYDROBATIC_LOCALIZATION_DVLFACTOR_H
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
+#include <gtsam/nonlinear/NoiseModelFactorN.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/base/Vector.h>
 #include <gtsam/base/Matrix.h>
@@ -12,7 +13,7 @@
 #include <iostream>
 namespace gtsam {
 
-class DvlFactor : public NoiseModelFactor3<Pose3, Vector3, imuBias::ConstantBias> {
+class DvlFactor : public NoiseModelFactorN<Pose3, Vector3, imuBias::ConstantBias> {
  private:
     Vector3 dvl_velocity_measurement_;
     Vector3 base_link_gyro_measurement_;
@@ -20,7 +21,7 @@ class DvlFactor : public NoiseModelFactor3<Pose3, Vector3, imuBias::ConstantBias
     Rot3 base_link_dvl_rotations_;
 
  public:
-  using Base = NoiseModelFactor3<Pose3, Vector3, imuBias::ConstantBias>;
+  using Base = NoiseModelFactorN<Pose3, Vector3, imuBias::ConstantBias>;
   DvlFactor(){};
   virtual ~DvlFactor() {}  
   /**

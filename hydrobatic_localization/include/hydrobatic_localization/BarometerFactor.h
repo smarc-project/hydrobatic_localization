@@ -2,6 +2,7 @@
 #define HYDROBATIC_LOCALIZATION_BAROMETERFACTOR_H
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
+#include <gtsam/nonlinear/NoiseModelFactorN.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/base/Vector.h>
 #include <gtsam/base/Matrix.h>
@@ -11,13 +12,13 @@
 #include <iostream>
 namespace gtsam {
 
-class BarometerFactor : public NoiseModelFactor1<Pose3> {
+class BarometerFactor : public NoiseModelFactorN<Pose3> {
  private:
     double measuredDepth_;
     Vector3 base_to_pressure_offset_;
 
  public:
-  using Base = NoiseModelFactor1<Pose3>;
+  using Base = NoiseModelFactorN<Pose3>;
   BarometerFactor(){};
   virtual ~BarometerFactor() {}  
   /**

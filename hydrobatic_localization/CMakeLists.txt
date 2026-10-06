@@ -23,17 +23,35 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(GeographicLib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(pybind11 REQUIRED)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 find_library(CPPUNITLITE_LIBRARY NAMES CppUnitLite PATHS /usr/local/lib)
 find_package(piml_msgs REQUIRED)
 find_package(yaml-cpp REQUIRED)
+
+# GeographicLib
+list(APPEND CMAKE_MODULE_PATH "/usr/share/cmake/geographiclib")
+find_package(GeographicLib REQUIRED)
+
 # GTSAM stuff
 find_package(GTSAMCMakeTools)
-find_package(GTSAM REQUIRED)
+include(FetchContent)
+find_package(GTSAM QUIET CONFIG)
+
+# If GTSAM is not found, fetch it from GitHub
+if(NOT GTSAM_FOUND)
+    message(STATUS "GTSAM not found, fetching from GitHub...")
+    FetchContent_Declare(
+    gtsam
+    GIT_REPOSITORY https://github.com/borglab/gtsam.git
+    GIT_TAG release/4.3a.2
+  )
+  FetchContent_MakeAvailable(gtsam)
+endif()
+
 include_directories(${GTSAM_INCLUDE_DIR})
+message(GTSAM_INCLUDE_DIR="${GTSAM_INCLUDE_DIR}")
 # CppTest
 #include the headers
 include_directories(${PROJECT_SOURCE_DIR}/include/)
@@ -41,12 +59,14 @@ include_directories(${PROJECT_SOURCE_DIR}/include/)
 include_directories(${PROJECT_SOURCE_DIR}/launch/)
 #include GeographicLib
 include_directories(${GeographicLib_INCLUDE_DIRS})
+message(GeographicLib_INCLUDE_DIRS="${GeographicLib_INCLUDE_DIRS}")
 include_directories(${Python3_INCLUDE_DIRS})
 # set python interpreter path 
 
-add_executable(state_estimator src/state_estimator.cpp src/gtsam_graph.cpp src/BodyVelocityFactor src/BarometerFactor.cpp src/DvlFactor.cpp src/SamMotionModel src/SamMotionModelFactor.cpp)
+add_executable(state_estimator src/state_estimator.cpp src/gtsam_graph.cpp src/BodyVelocityFactor.cpp src/BarometerFactor.cpp src/DvlFactor.cpp src/SamMotionModel.cpp src/SamMotionModelFactor.cpp)
 ament_target_dependencies(state_estimator
   rclcpp
+  ament_index_cpp
   sensor_msgs
   dead_reckoning_msgs
   std_msgs
@@ -64,7 +84,7 @@ ament_target_dependencies(state_estimator
 target_link_libraries(state_estimator
   gtsam
   Eigen3::Eigen
-  GeographicLib::GeographicLib
+  ${GeographicLib_LIBRARIES}
   yaml-cpp   
   tf2_geometry_msgs::tf2_geometry_msgs
   Python3::Python
@@ -87,6 +107,8 @@ ament_target_dependencies(motion_model
   geometry_msgs
   piml_msgs
 )
+
+target_link_libraries(motion_model Python3::Python)
 
 # add logger node executable
 add_executable(logger src/loggerNode.cpp)
