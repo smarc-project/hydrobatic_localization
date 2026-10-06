@@ -29,7 +29,10 @@ StateEstimator::StateEstimator()
   this->declare_parameter<bool>("use_sensor_covariance", false);
   this->get_parameter("use_sensor_covariance", use_sensor_covariance_);
 
-
+  this->number_of_gps_measurements_ = 0;
+  this->sum_lat_ = 0.0;
+  this->sum_lon_ = 0.0;
+  this->sum_alt_ = 0.0;
 
   std::string config_file;
   if (std::filesystem::path(config_file_).is_absolute()) {
@@ -111,25 +114,25 @@ StateEstimator::StateEstimator()
   }
 
 
-  if(using_motion_model_)
-  {
-    thruster_vector_sub_ = this->create_subscription<sam_msgs::msg::ThrusterAngles>(
-      sam_msgs::msg::Topics::THRUST_VECTOR_CMD_TOPIC, 10,
-      std::bind(&StateEstimator::ThrusterVectorCallback, this, std::placeholders::_1));
+  // if(using_motion_model_)
+  // {
+  //   thruster_vector_sub_ = this->create_subscription<sam_msgs::msg::ThrusterAngles>(
+  //     sam_msgs::msg::Topics::THRUST_VECTOR_CMD_TOPIC, 10,
+  //     std::bind(&StateEstimator::ThrusterVectorCallback, this, std::placeholders::_1));
 
-    thruster_rpms_sub_ = this->create_subscription<sam_msgs::msg::ThrusterRPMs>(
-      "core/thruster_rpms_cmd", 10,
-      std::bind(&StateEstimator::thruster_callback, this, std::placeholders::_1));
+  //   thruster_rpms_sub_ = this->create_subscription<sam_msgs::msg::ThrusterRPMs>(
+  //     "core/thruster_rpms_cmd", 10,
+  //     std::bind(&StateEstimator::thruster_callback, this, std::placeholders::_1));
 
-    lcg_sub_.subscribe(this, sam_msgs::msg::Topics::LCG_FB_TOPIC);
-    vbs_sub_.subscribe(this, sam_msgs::msg::Topics::VBS_FB_TOPIC);
+  //   lcg_sub_.subscribe(this, sam_msgs::msg::Topics::LCG_FB_TOPIC);
+  //   vbs_sub_.subscribe(this, sam_msgs::msg::Topics::VBS_FB_TOPIC);
 
-    lcg_vbs_sync_ = std::make_shared<LcgVbsSync>(
-      LcgVbsSyncPolicy(10), lcg_sub_, vbs_sub_);
+  //   lcg_vbs_sync_ = std::make_shared<LcgVbsSync>(
+  //     LcgVbsSyncPolicy(10), lcg_sub_, vbs_sub_);
 
-    lcg_vbs_sync_->registerCallback(
-      std::bind(&StateEstimator::lcg_vbs_callback, this, std::placeholders::_1, std::placeholders::_2) );
-  }
+  //   lcg_vbs_sync_->registerCallback(
+  //     std::bind(&StateEstimator::lcg_vbs_callback, this, std::placeholders::_1, std::placeholders::_2) );
+  // }
 
   tf_static_broadcaster_ = std::make_shared<tf2_ros::StaticTransformBroadcaster>(this);  
 
@@ -151,7 +154,7 @@ StateEstimator::StateEstimator()
   gtsam_graph_ = std::make_unique<GtsamGraph>(inference_strategy, config_file);
 
   // Initialize the PreintegratedMotionModel
-  pmm = std::make_shared<PreintegratedMotionModel>(dt_);
+  // pmm = std::make_shared<PreintegratedMotionModel>(dt_);
 
   // utm timer for publishing UTM zone band
   utm_timer_ = this->create_wall_timer(
@@ -378,7 +381,7 @@ void StateEstimator::gt_odom_callback(const nav_msgs::msg::Odometry::SharedPtr m
       tf2::durationFromSec(0.1)     
     );
   } catch (const tf2::TransformException &ex) {
-    RCLCPP_WARN(get_logger(), "TF lookup (odom←base_link) failed: %s", ex.what());
+    RCLCPP_WARN(this->get_logger(), "TF lookup (odom←base_link) failed: %s", ex.what());
     return;
   }
   tf2::Quaternion q_body_to_odom;
@@ -416,62 +419,62 @@ void StateEstimator::gt_odom_callback(const nav_msgs::msg::Odometry::SharedPtr m
 }
 
 
-void StateEstimator::ThrusterVectorCallback(const sam_msgs::msg::ThrusterAngles::SharedPtr msg)
-{
-  if(is_graph_initialized_)
-  {
-    Eigen::VectorXd u(2);
-    u << msg->thruster_vertical_radians,
-        msg->thruster_horizontal_radians;
+// void StateEstimator::ThrusterVectorCallback(const sam_msgs::msg::ThrusterAngles::SharedPtr msg)
+// {
+//   if(is_graph_initialized_)
+//   {
+//     Eigen::VectorXd u(2);
+//     u << msg->thruster_vertical_radians,
+//         msg->thruster_horizontal_radians;
         
-    double timestamp = rclcpp::Time(msg->header.stamp).seconds();
-    {
-      std::lock_guard<std::mutex> lk(control_list_mutex_);
-      pmm->controlToList(u, timestamp, true);
-    }
-  }
-}
+//     double timestamp = rclcpp::Time(msg->header.stamp).seconds();
+//     {
+//       std::lock_guard<std::mutex> lk(control_list_mutex_);
+//       pmm->controlToList(u, timestamp, true);
+//     }
+//   }
+// }
 
 // thrusters-only
-void StateEstimator::thruster_callback(const sam_msgs::msg::ThrusterRPMs::SharedPtr msg)
-{
-  if(is_graph_initialized_)
-  {
-    last_thr1_rpm_ = msg->thruster_1_rpm;
-    last_thr2_rpm_ = msg->thruster_2_rpm;
+// void StateEstimator::thruster_callback(const sam_msgs::msg::ThrusterRPMs::SharedPtr msg)
+// {
+//   if(is_graph_initialized_)
+//   {
+//     last_thr1_rpm_ = msg->thruster_1_rpm;
+//     last_thr2_rpm_ = msg->thruster_2_rpm;
 
-    Eigen::Vector4d u_fb;
-    u_fb << last_lcg_,      
-            last_vbs_,
-            last_thr1_rpm_,
-            last_thr2_rpm_;
-    double timestamp = rclcpp::Time(msg->header.stamp).seconds();
-    {
-      std::lock_guard<std::mutex> lk(control_list_mutex_);
-      pmm->controlToList(u_fb, timestamp, false);
-    }
-  }
-}
+//     Eigen::Vector4d u_fb;
+//     u_fb << last_lcg_,      
+//             last_vbs_,
+//             last_thr1_rpm_,
+//             last_thr2_rpm_;
+//     double timestamp = rclcpp::Time(msg->header.stamp).seconds();
+//     {
+//       std::lock_guard<std::mutex> lk(control_list_mutex_);
+//       pmm->controlToList(u_fb, timestamp, false);
+//     }
+//   }
+// }
 
 // LCG/VBS-only
-void StateEstimator::lcg_vbs_callback(
-  const smarc_msgs::msg::PercentStamped::ConstSharedPtr lcg,
-  const smarc_msgs::msg::PercentStamped::ConstSharedPtr vbs)
-{
-  if(is_graph_initialized_)
-  {
-    last_lcg_ = lcg->value;
-    last_vbs_ = vbs->value;
+// void StateEstimator::lcg_vbs_callback(
+//   const smarc_msgs::msg::PercentStamped::ConstSharedPtr lcg,
+//   const smarc_msgs::msg::PercentStamped::ConstSharedPtr vbs)
+// {
+//   if(is_graph_initialized_)
+//   {
+//     last_lcg_ = lcg->value;
+//     last_vbs_ = vbs->value;
 
-    Eigen::Vector4d u_fb;
-    u_fb << last_lcg_,last_vbs_, last_thr1_rpm_, last_thr2_rpm_;
-   double timestamp = rclcpp::Time(lcg->header.stamp).seconds();
-   {
-     std::lock_guard<std::mutex> lk(control_list_mutex_);
-     pmm->controlToList(u_fb, timestamp, false);
-   }
-  } 
-}
+//     Eigen::Vector4d u_fb;
+//     u_fb << last_lcg_,last_vbs_, last_thr1_rpm_, last_thr2_rpm_;
+//    double timestamp = rclcpp::Time(lcg->header.stamp).seconds();
+//    {
+//      std::lock_guard<std::mutex> lk(control_list_mutex_);
+//      pmm->controlToList(u_fb, timestamp, false);
+//    }
+//   } 
+// }
 
 
 // callback for the IMU preintegator
@@ -560,7 +563,13 @@ void StateEstimator::barometer_callback(const sensor_msgs::msg::FluidPressure::S
 
 
 void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg) {
-  if(init_from_ground_truth_) return;
+  RCLCPP_INFO(this->get_logger(), "Received GPS fix: lat=%.6f, lon=%.6f, alt=%.2f, status=%d",
+              msg->latitude, msg->longitude, msg->altitude, msg->status.status);
+  if(init_from_ground_truth_) 
+  {
+    RCLCPP_INFO(this->get_logger(), "Ignoring GPS fix because init_from_ground_truth is true");
+    return;
+  }
   if (msg->status.status < sensor_msgs::msg::NavSatStatus::STATUS_FIX) 
   {
     RCLCPP_WARN(this->get_logger(), "Received GPS message without valid fix (status: %d)", msg->status.status);
@@ -570,6 +579,7 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
   double utm_x, utm_y, utm_z;
   if(!map_initialized_ )
   {
+    RCLCPP_INFO(this->get_logger(), "Initializing map frame with GPS data");
   // if sim time is used, take the ground truth as gps reading
     if(this->get_parameter("use_sim_time").as_bool())
     {
@@ -617,7 +627,7 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
       double var = msg->position_covariance[0];
       if (var > cov_threshold_*cov_threshold_)
       {
-        RCLCPP_WARN(get_logger(),
+        RCLCPP_WARN(this->get_logger(),
         "GPS covariance too high (sigma=%.1f m), dropping fix", std::sqrt(var));
         return;
       }
@@ -625,6 +635,7 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
         sum_lon_ += msg->longitude;
         sum_alt_ += msg->altitude;
         number_of_gps_measurements_++;
+        RCLCPP_INFO(this->get_logger(), "Accumulated GPS measurements: %d", number_of_gps_measurements_);
       
       if (number_of_gps_measurements_ >= number_of_gps_measurements_for_map_init_) 
       {
@@ -802,8 +813,8 @@ void StateEstimator::KeyframeTimerCallback()
   //   }
 
   if(!map_initialized_){
-      RCLCPP_INFO(get_logger(), "  skipping: map_initialized_ == false");
-      start_without_mocap(); // Nacho: to start at the surface without the mocap
+      RCLCPP_INFO(this->get_logger(), "  skipping: map_initialized_ == false");
+      // start_without_mocap(); // Nacho: to start at the surface without the mocap
     return;
   }
 
@@ -933,25 +944,25 @@ void StateEstimator::KeyframeTimerCallback()
   auto [imu_dt, sbg_dt] = gtsam_graph_->getTij();
   if (imu_dt <= 0.0/* || sbg_dt <= 0.0*/)
   {
-    RCLCPP_INFO(get_logger(),"No new IMU/SBG data this cycle (imu_dt=%.6f, sbg_dt=%.6f), skipping factors + optimize",
+    RCLCPP_INFO(this->get_logger(),"No new IMU/SBG data this cycle (imu_dt=%.6f, sbg_dt=%.6f), skipping factors + optimize",
       imu_dt, sbg_dt);
     return;
   }
-  if(using_motion_model_)
-  {
-    double current_time = this->get_clock()->now().seconds();
-    NavState state = NavState(previous_state_.pose(), previous_state_.velocity());
-    NavState new_state;
-    {
-      std::lock_guard<std::mutex> lk(control_list_mutex_);
+  // if(using_motion_model_)
+  // {
+  //   double current_time = this->get_clock()->now().seconds();
+  //   NavState state = NavState(previous_state_.pose(), previous_state_.velocity());
+  //   NavState new_state;
+  //   {
+  //     std::lock_guard<std::mutex> lk(control_list_mutex_);
       
-      new_state = pmm->predict(state, gyro, last_time_,
-              current_time,gtsam_graph_->getCurrentCovariance(gtsam_graph_->getCurrentIndex()));
-      gtsam_graph_->addMotionModelFactor(last_time_,current_time,pmm,gyro,new_state);
-    }
-    last_time_ = current_time;
+  //     new_state = pmm->predict(state, gyro, last_time_,
+  //             current_time,gtsam_graph_->getCurrentCovariance(gtsam_graph_->getCurrentIndex()));
+  //     gtsam_graph_->addMotionModelFactor(last_time_,current_time,pmm,gyro,new_state);
+  //   }
+  //   last_time_ = current_time;
 
-  }
+  // }
   
   // Predict the next state using the preintegrated measurements AND add the imu factor to the graph.
   NavState predictes_imu_state = gtsam_graph_->addImuFactor();
@@ -993,10 +1004,10 @@ void StateEstimator::KeyframeTimerCallback()
 
   gtsam_graph_->optimize();
 
-  if(using_motion_model_){
-    std::lock_guard<std::mutex> lk(control_list_mutex_);
-    pmm->resetIntegration();
-  }
+  // if(using_motion_model_){
+  //   std::lock_guard<std::mutex> lk(control_list_mutex_);
+  //   pmm->resetIntegration();
+  // }
   current_imu_bias_ = gtsam_graph_->getCurrentImuBias();
 
   previous_state_ = gtsam_graph_->getCurrentState();
