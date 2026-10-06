@@ -580,50 +580,8 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
   if(!map_initialized_ )
   {
     RCLCPP_INFO(this->get_logger(), "Initializing map frame with GPS data");
-  // if sim time is used, take the ground truth as gps reading
-    if(this->get_parameter("use_sim_time").as_bool())
-    {
-      try
-      {
-        transformStamped = tf_buffer_.lookupTransform("utm_34_V", "sam_auv_v1/gps_link_gt",
-                                                        tf2::TimePointZero, std::chrono::seconds(1));
-        utm_x = transformStamped.transform.translation.x;
-        utm_y = transformStamped.transform.translation.y;
-        utm_z = transformStamped.transform.translation.z;
-        geometry_msgs::msg::TransformStamped map_transform;
-        map_transform.header.stamp = this->get_clock()->now();
-        map_transform.header.frame_id = "utm_34_V";     // Frmae name from sim
-        map_transform.child_frame_id = "map";        
-        map_transform.transform.translation.x = utm_x;
-        map_transform.transform.translation.y = utm_y;
-        map_transform.transform.translation.z = utm_z;
-        // Use an identity rotation for the map frame.
-        map_transform.transform.rotation.x = 0.0;
-        map_transform.transform.rotation.y = 0.0;
-        map_transform.transform.rotation.z = 0.0;
-        map_transform.transform.rotation.w = 1.0;
-        tf_static_broadcaster_->sendTransform(map_transform);
-        // first utm coordinates of the base_link
-        first_utm_x = utm_x;
-        first_utm_y = utm_y;
-        first_utm_z = utm_z;
-        RCLCPP_INFO(this->get_logger(), 
-                    "Broadcasted static map transform at local x: %f, y: %f, z: %f", 
-                    utm_x, utm_y, utm_z);
-        map_initialized_ = true;
-      }
-      
-      catch (tf2::TransformException &ex) {
-        RCLCPP_WARN(this->get_logger(), "Could not get transform: %s", ex.what());
-        return;
-      }
-    }
-
-    // if not using the sim, take the real gps reading
-    else
-    {
       // RCLCPP_INFO(this->get_logger(), "Waiting for GPS fix to initialize map frame");
-      RCLCPP_INFO(this->get_logger(), "Waiting for GPS fix to initialize map frame: %f ", number_of_gps_measurements_);
+      RCLCPP_INFO(this->get_logger(), "Waiting for GPS fix to initialize map frame: %d ", number_of_gps_measurements_);
       double var = msg->position_covariance[0];
       if (var > cov_threshold_*cov_threshold_)
       {
@@ -683,8 +641,6 @@ void StateEstimator::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr m
         return;
       } 
       return;
-    }
-    return;
   }
   // Convert the GPS coordinates to UTM coordinates
   int utm_zone;
