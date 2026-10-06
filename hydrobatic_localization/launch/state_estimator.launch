@@ -1,9 +1,11 @@
 <launch>
+    <arg name="gps_topics" default="core/can_gps"/>
     <arg name="config_file" default="sam.yaml"/>
     <arg name ="robot_name" default ="sam_auv_v1"/>
     <arg name="use_motion_model" default="true"/>
     <arg name="inference_strategy" default="FullSmoothing"/>
     <arg name="use_sim_time" default="false"/> 
+    <arg name="kf_interval_hz" default="10"/>
     <arg name="use_sensor_covariance" default="false"/>
     <arg name="init_from_ground_truth" default="false"/>
     <arg name="robot_urdf" default="sam_auv.urdf"/>
@@ -11,10 +13,12 @@
     <node pkg="hydrobatic_localization" exec="state_estimator" output="screen" namespace = "$(var robot_name)">
         <param name = "config_file" value = "$(var config_file)"/>
         <param name = "use_sim_time" value = "$(var use_sim_time)"/>
+        <param name = "kf_interval_hz" value = "$(var kf_interval_hz)"/>
         <param name = "use_motion_model" value = "$(var use_motion_model)"/>
         <param name = "inference_strategy" value = '$(var inference_strategy)'/>
         <param name = "init_from_ground_truth" value = "$(var init_from_ground_truth)"/>
         <param name = "use_sensor_covariance" value = "$(var use_sensor_covariance)"/>
+        <remap from="core/can_gps" to="$(var gps_topics)"/>
     </node>
 
     <!-- <node  pkg="hydrobatic_localization" exec="pressure_pub.py" output="screen" namespace="$(var robot_name)">
