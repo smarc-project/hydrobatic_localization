@@ -18,7 +18,6 @@
         <param name = "inference_strategy" value = '$(var inference_strategy)'/>
         <param name = "init_from_ground_truth" value = "$(var init_from_ground_truth)"/>
         <param name = "use_sensor_covariance" value = "$(var use_sensor_covariance)"/>
-        <remap from="core/can_gps" to="$(var gps_topics)"/>
     </node>
 
     <!-- <node  pkg="hydrobatic_localization" exec="pressure_pub.py" output="screen" namespace="$(var robot_name)">
