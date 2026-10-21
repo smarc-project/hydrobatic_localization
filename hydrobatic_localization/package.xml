@@ -14,7 +14,9 @@
   <depend>geometry_msgs</depend>
   <depend>sam_msgs</depend>
   <depend>piml_msgs</depend>
-  <exec_depend>ament_python</exec_depend>
+  <depend>ament_python</depend>
+  <depend>python3-dev</depend>
+  <depend>ament_index_cpp</depend>
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
 

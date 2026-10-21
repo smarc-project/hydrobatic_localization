@@ -2,6 +2,7 @@
 #define HYDROBATIC_LOCALIZATION_SAMMOTIONMODELFACTOR_H
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
+#include <gtsam/nonlinear/NoiseModelFactorN.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/base/Vector.h>
 #include <gtsam/base/Matrix.h>
@@ -132,7 +133,7 @@ class PreintegratedMotionModel
 
 };
 
-class SamMotionModelFactor : public NoiseModelFactor4<Pose3, Pose3, Vector3,Vector3> {
+class SamMotionModelFactor : public NoiseModelFactorN<Pose3, Pose3, Vector3,Vector3> {
  private:
 
   double start_time_;
@@ -147,7 +148,7 @@ class SamMotionModelFactor : public NoiseModelFactor4<Pose3, Pose3, Vector3,Vect
 
   
  public:
-  using Base = NoiseModelFactor4<Pose3, Pose3, Vector3, Vector3>; //might need to include the bias for the gyro
+  using Base = NoiseModelFactorN<Pose3, Pose3, Vector3, Vector3>; //might need to include the bias for the gyro
   // SamMotionModelFactor(){};
   virtual ~SamMotionModelFactor() {}  
   /**

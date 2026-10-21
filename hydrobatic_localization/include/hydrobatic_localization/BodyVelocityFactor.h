@@ -2,6 +2,7 @@
 #define HYDROBATIC_LOCALIZATION_BODYVELFACTOR_H
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
+#include <gtsam/nonlinear/NoiseModelFactorN.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/base/Vector.h>
 #include <gtsam/base/Matrix.h>
@@ -12,12 +13,12 @@
 #include <iostream>
 namespace gtsam {
 
-class BodyVelocityFactor : public NoiseModelFactor2<Pose3, Vector3> {
+class BodyVelocityFactor : public NoiseModelFactorN<Pose3, Vector3> {
  private:
     Vector3 velocity_measurement_;
 
  public:
-  using Base = NoiseModelFactor2<Pose3, Vector3>;
+  using Base = NoiseModelFactorN<Pose3, Vector3>;
   BodyVelocityFactor(){};
   virtual ~BodyVelocityFactor() {}  
   /**
