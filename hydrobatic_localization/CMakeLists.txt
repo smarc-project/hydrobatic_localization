@@ -11,6 +11,7 @@ find_package(ament_cmake REQUIRED)
 # further dependencies manually.
 # find_package(<dependency> REQUIRED)
 find_package(rclcpp REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 find_package(rclpy REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
@@ -23,6 +24,8 @@ find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
 find_package(geometry_msgs REQUIRED)
+# Ubuntu's libgeographiclib-dev ships only FindGeographicLib.cmake, in its own folder.
+list(APPEND CMAKE_MODULE_PATH "/usr/share/cmake/geographiclib")
 find_package(GeographicLib REQUIRED)
 find_package(message_filters REQUIRED)
 find_package(pybind11 REQUIRED)
@@ -47,6 +50,7 @@ include_directories(${Python3_INCLUDE_DIRS})
 add_executable(state_estimator src/state_estimator.cpp src/gtsam_graph.cpp src/BodyVelocityFactor src/BarometerFactor.cpp src/DvlFactor.cpp src/SamMotionModel src/SamMotionModelFactor.cpp)
 ament_target_dependencies(state_estimator
   rclcpp
+  ament_index_cpp
   sensor_msgs
   dead_reckoning_msgs
   std_msgs
@@ -64,7 +68,7 @@ ament_target_dependencies(state_estimator
 target_link_libraries(state_estimator
   gtsam
   Eigen3::Eigen
-  GeographicLib::GeographicLib
+  ${GeographicLib_LIBRARIES}
   yaml-cpp   
   tf2_geometry_msgs::tf2_geometry_msgs
   Python3::Python
